@@ -1,42 +1,64 @@
 <template>
-  <div class="app">
-    <header class="top-nav">
-      <div class="nav-container">
-        <div class="logo">
-          <h1>{{ t('nav.companyName') }}</h1>
-          <span class="subtitle">{{ t('nav.subtitle') }}</span>
+  <div id="app">
+    <div class="app-shell" :class="{ 'is-collapsed': isCollapsed }">
+      <!-- Fixed sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-logo">
+          <div class="sidebar-logo-text">
+            <h1>{{ t('nav.companyName') }}</h1>
+            <span class="sidebar-subtitle">{{ t('nav.subtitle') }}</span>
+          </div>
+          <button class="sidebar-toggle" @click="toggleSidebar" :aria-label="isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'">
+            <span class="toggle-icon">{{ isCollapsed ? '›' : '‹' }}</span>
+          </button>
         </div>
-        <nav class="nav-tabs">
-          <router-link to="/" :class="{ active: $route.path === '/' }">
-            {{ t('nav.overview') }}
+
+        <nav class="sidebar-nav">
+          <router-link to="/" class="nav-item" exact-active-class="nav-item--active" data-label="Overview">
+            <span class="nav-icon">⊞</span>
+            <span class="nav-label">{{ t('nav.overview') }}</span>
           </router-link>
-          <router-link to="/inventory" :class="{ active: $route.path === '/inventory' }">
-            {{ t('nav.inventory') }}
+          <router-link to="/inventory" class="nav-item" active-class="nav-item--active" data-label="Inventory">
+            <span class="nav-icon">▤</span>
+            <span class="nav-label">{{ t('nav.inventory') }}</span>
           </router-link>
-          <router-link to="/orders" :class="{ active: $route.path === '/orders' }">
-            {{ t('nav.orders') }}
+          <router-link to="/orders" class="nav-item" active-class="nav-item--active" data-label="Orders">
+            <span class="nav-icon">◫</span>
+            <span class="nav-label">{{ t('nav.orders') }}</span>
           </router-link>
-          <router-link to="/spending" :class="{ active: $route.path === '/spending' }">
-            {{ t('nav.finance') }}
+          <router-link to="/spending" class="nav-item" active-class="nav-item--active" data-label="Finance">
+            <span class="nav-icon">◈</span>
+            <span class="nav-label">{{ t('nav.finance') }}</span>
           </router-link>
-          <router-link to="/demand" :class="{ active: $route.path === '/demand' }">
-            {{ t('nav.demandForecast') }}
+          <router-link to="/demand" class="nav-item" active-class="nav-item--active" data-label="Demand Forecast">
+            <span class="nav-icon">◎</span>
+            <span class="nav-label">{{ t('nav.demandForecast') }}</span>
           </router-link>
-          <router-link to="/reports" :class="{ active: $route.path === '/reports' }">
-            Reports
+          <router-link to="/reports" class="nav-item" active-class="nav-item--active" data-label="Reports">
+            <span class="nav-icon">≡</span>
+            <span class="nav-label">Reports</span>
           </router-link>
         </nav>
-        <LanguageSwitcher />
-        <ProfileMenu
-          @show-profile-details="showProfileDetails = true"
-          @show-tasks="showTasks = true"
-        />
+
+        <div class="sidebar-spacer"></div>
+
+        <div class="sidebar-footer">
+          <LanguageSwitcher />
+          <ProfileMenu
+            @show-profile-details="showProfileDetails = true"
+            @show-tasks="showTasks = true"
+          />
+        </div>
+      </aside>
+
+      <!-- Content area -->
+      <div class="content-wrapper">
+        <FilterBar />
+        <main class="main-content">
+          <router-view />
+        </main>
       </div>
-    </header>
-    <FilterBar />
-    <main class="main-content">
-      <router-view />
-    </main>
+    </div>
 
     <ProfileDetailsModal
       :is-open="showProfileDetails"
@@ -77,6 +99,17 @@ export default {
   setup() {
     const { currentUser } = useAuth()
     const { t } = useI18n()
+
+    const isCollapsed = ref(false)
+
+    function toggleSidebar() {
+      isCollapsed.value = !isCollapsed.value
+    }
+
+    function initSidebarState() {
+      if (window.innerWidth < 1024) isCollapsed.value = true
+    }
+
     const showProfileDetails = ref(false)
     const showTasks = ref(false)
     const apiTasks = ref([])
@@ -146,10 +179,15 @@ export default {
       }
     }
 
-    onMounted(loadTasks)
+    onMounted(() => {
+      initSidebarState()
+      loadTasks()
+    })
 
     return {
       t,
+      isCollapsed,
+      toggleSidebar,
       showProfileDetails,
       showTasks,
       tasks,
@@ -162,6 +200,36 @@ export default {
 </script>
 
 <style>
+:root {
+  --sidebar-width: 240px;
+  --sidebar-collapsed-width: 60px;
+  --sidebar-bg:            #0f172a;
+  --sidebar-border:        rgba(255, 255, 255, 0.07);
+  --sidebar-text:          #94a3b8;
+  --sidebar-text-active:   #f1f5f9;
+  --sidebar-hover-bg:      rgba(255, 255, 255, 0.05);
+  --sidebar-active-bg:     rgba(59, 130, 246, 0.14);
+  --sidebar-active-border: #3b82f6;
+  --content-bg:  #f8fafc;
+  --surface:     #ffffff;
+  --border:      #e2e8f0;
+  --border-mid:  #cbd5e1;
+  --text-1: #0f172a;
+  --text-2: #334155;
+  --text-3: #64748b;
+  --text-4: #94a3b8;
+  --accent:       #3b82f6;
+  --accent-hover: #2563eb;
+  --green:    #059669;  --green-bg:  #d1fae5;
+  --orange:   #ea580c;  --orange-bg: #fed7aa;
+  --red:      #dc2626;  --red-bg:    #fecaca;
+  --blue:     #2563eb;  --blue-bg:   #dbeafe;
+  --indigo:   #3730a3;  --indigo-bg: #e0e7ff;
+  --page-padding: 2rem;
+  --radius:    8px;
+  --radius-sm: 5px;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -180,33 +248,6 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-}
-
-.top-nav {
-  background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.nav-container {
-  max-width: 1600px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  padding: 0 2rem;
-  height: 70px;
-}
-
-.nav-container > .nav-tabs {
-  margin-left: auto;
-  margin-right: 1rem;
-}
-
-.nav-container > .language-switcher {
-  margin-right: 1rem;
 }
 
 .logo {
@@ -228,42 +269,6 @@ body {
   font-weight: 400;
   padding-left: 0.75rem;
   border-left: 1px solid #e2e8f0;
-}
-
-.nav-tabs {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.nav-tabs a {
-  padding: 0.625rem 1.25rem;
-  color: #64748b;
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 0.938rem;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.nav-tabs a:hover {
-  color: #0f172a;
-  background: #f1f5f9;
-}
-
-.nav-tabs a.active {
-  color: #2563eb;
-  background: #eff6ff;
-}
-
-.nav-tabs a.active::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: #2563eb;
 }
 
 .main-content {
@@ -482,5 +487,227 @@ tbody tr:hover {
   border-radius: 8px;
   margin: 1rem 0;
   font-size: 0.938rem;
+}
+
+/* ── Shell ── */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--content-bg);
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: var(--sidebar-width);
+  height: 100vh;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  z-index: 100;
+  transition: width 0.2s ease;
+}
+
+.sidebar-logo {
+  padding: 1.5rem 1.25rem 1rem;
+  border-bottom: 1px solid var(--sidebar-border);
+  flex-shrink: 0;
+}
+.sidebar-logo h1 {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--sidebar-text-active);
+  letter-spacing: -0.01em;
+  margin: 0 0 0.25rem;
+  line-height: 1.3;
+}
+.sidebar-subtitle {
+  display: block;
+  font-size: 0.6875rem;
+  color: var(--sidebar-text);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* Nav links */
+.sidebar-nav {
+  padding: 0.75rem 0.625rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--sidebar-text);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  line-height: 1.4;
+}
+.nav-item:hover {
+  background: var(--sidebar-hover-bg);
+  color: var(--sidebar-text-active);
+}
+.nav-item--active {
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-text-active);
+  border-left-color: var(--sidebar-active-border);
+}
+.nav-icon {
+  font-size: 0.875rem;
+  opacity: 0.65;
+  flex-shrink: 0;
+  width: 1.125rem;
+  text-align: center;
+}
+
+/* Sidebar footer */
+.sidebar-spacer {
+  flex: 1;
+  min-height: 1rem;
+}
+.sidebar-footer {
+  padding: 0.75rem 0.625rem 1rem;
+  border-top: 1px solid var(--sidebar-border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* ── Content wrapper ── */
+.content-wrapper {
+  margin-left: var(--sidebar-width);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-width: 0;
+  transition: margin-left 0.2s ease;
+}
+.main-content {
+  flex: 1;
+  padding: 1.5rem 2rem;
+  max-width: 1400px;
+  width: 100%;
+}
+
+/* ── Collapsed sidebar state ── */
+.app-shell.is-collapsed .sidebar {
+  width: var(--sidebar-collapsed-width);
+}
+.app-shell.is-collapsed .content-wrapper {
+  margin-left: var(--sidebar-collapsed-width);
+}
+
+.app-shell.is-collapsed .sidebar-logo-text,
+.app-shell.is-collapsed .nav-label {
+  display: none;
+}
+
+.app-shell.is-collapsed .sidebar-logo {
+  justify-content: center;
+  padding: 1rem 0.5rem;
+}
+
+.app-shell.is-collapsed .sidebar-nav {
+  padding: 0.75rem 0.375rem;
+}
+.app-shell.is-collapsed .nav-item {
+  justify-content: center;
+  padding: 0.5rem;
+  border-left-color: transparent;
+  border-radius: var(--radius-sm);
+}
+.app-shell.is-collapsed .nav-item--active {
+  border-left-color: transparent;
+  background: var(--sidebar-active-bg);
+}
+.app-shell.is-collapsed .nav-icon {
+  width: auto;
+  opacity: 1;
+  font-size: 1rem;
+}
+
+.app-shell.is-collapsed .sidebar-footer {
+  align-items: center;
+  padding: 0.75rem 0.375rem 1rem;
+}
+
+.app-shell.is-collapsed .nav-item {
+  position: relative;
+}
+.app-shell.is-collapsed .nav-item::after {
+  content: attr(data-label);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #1e293b;
+  color: #f1f5f9;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  z-index: 200;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+.app-shell.is-collapsed .nav-item:hover::after {
+  opacity: 1;
+}
+
+.sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--sidebar-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--sidebar-text);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+  padding: 0;
+}
+.sidebar-toggle:hover {
+  background: var(--sidebar-hover-bg);
+  color: var(--sidebar-text-active);
+}
+.toggle-icon {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  margin-top: -1px;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sidebar-logo-text h1 {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--sidebar-text-active);
+  letter-spacing: -0.01em;
+  margin: 0 0 0.25rem;
+  line-height: 1.3;
 }
 </style>
